@@ -5,6 +5,7 @@
 */
 
 include { paramsSummaryMap                                                              } from 'plugin/nf-schema'
+include { samplesheetToList                                                             } from 'plugin/nf-schema'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -26,7 +27,7 @@ include { TELFUSDETECTOR_FULL                                                   
 
 include { paramsSummaryMultiqc                                                          } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { softwareVersionsToYAML                                                        } from '../subworkflows/nf-core/utils_nfcore_pipeline'
-include { methodsDescriptionText                                                        } from '../subworkflows/local/utils_nfcore_svtorm_pipeline'
+include { methodsDescriptionText                                                        } from '../subworkflows/local/utils_nfcore_tempus_pipeline'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -52,35 +53,19 @@ workflow TEMPUS {
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
 
-    //
-    // Create normal BAM channel from input file provided through params.input
-    //
-    Channel
-        .fromSamplesheet("input")
-        .map {
-            meta, bam_n, bai_n ->
-                return [ meta.id, meta + [ bam_n ], [ bai_n ] ]
-            }
-        .groupTuple()
+    ch_samplesheet
+        .map { normal_meta, bam_n, bai_n, tmuour_meta, bam_t, bai_t -> tuple(normal_meta, bam_n, bai_n) }
         .set { ch_normal_bam }
 
-    //
-    // Create tumour BAM channel from input file provided through params.input
-    //
-    Channel
-        .fromSamplesheet("input")
-        .map {
-            meta, bam_t, bai_t ->
-                return [ meta.id, meta + [ bam_t ], [ bai_t ] ]
-            }
-        .groupTuple()
+    ch_samplesheet
+        .map { normal_meta, bam_n, bai_n, tmuour_meta, bam_t, bai_t -> tuple(tmuour_meta, bam_t, bai_t) }
         .set { ch_tumour_bam }
 
     //
     // MODULE: Run TelomereHunter
     //
-    TELOMEREHUNTER(ch_tumour_bam, ch_normal_bam)
-    ch_versions = ch_versions.mix(TELOMEREHUNTER.out.versions)
+    TELOMEREHUNTER_FULL(ch_tumour_bam, ch_normal_bam, params.banding)
+    ch_versions = ch_versions.mix(TELOMEREHUNTER_FULL.out.versions)
 
     //
     // Collate and save software versions

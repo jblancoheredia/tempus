@@ -13,21 +13,35 @@
                 "errorMessage": "Sample name must be provided and cannot contain spaces",
                 "meta": ["id"]
             },
-            "fastq_1": {
+            "bam_n": {
                 "type": "string",
                 "format": "file-path",
                 "exists": true,
-                "pattern": "^\\S+\\.f(ast)?q\\.gz$",
-                "errorMessage": "FastQ file for reads 1 must be provided, cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'"
+                "pattern": "^\\S+\\.bam$",
+                "errorMessage": "BAM file for NORMAL only 1 must be provided, cannot contain spaces and must have extension '.bam'"
             },
-            "fastq_2": {
+            "bai_n": {
                 "type": "string",
                 "format": "file-path",
                 "exists": true,
-                "pattern": "^\\S+\\.f(ast)?q\\.gz$",
-                "errorMessage": "FastQ file for reads 2 cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'"
+                "pattern": "^\\S+\\.bai$",
+                "errorMessage": "BAI file for NORMAL only 1 must be provided, cannot contain spaces and must have extension '.bai'"
+            },
+            "bam_t": {
+                "type": "string",
+                "format": "file-path",
+                "exists": true,
+                "pattern": "^\\S+\\.bam$",
+                "errorMessage": "BAM file for TUMOUR only 1 must be provided, cannot contain spaces and must have extension '.bam'"
+            },
+            "bai_t": {
+                "type": "string",
+                "format": "file-path",
+                "exists": true,
+                "pattern": "^\\S+\\.bai$",
+                "errorMessage": "BAI file for TUMOUR only 1 must be provided, cannot contain spaces and must have extension '.bai'"
             }
         },
-        "required": ["sample", "fastq_1"]
+        "required": ["sample", "bam_n", "bai_n", "bam_t", "bai_t"]
     }
 }

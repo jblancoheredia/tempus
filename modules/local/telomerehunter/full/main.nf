@@ -1,4 +1,4 @@
-process TELOMEREHUNTER {
+process TELOMEREHUNTER_FULL {
     tag "$meta.id"
     label 'process_high'
 
@@ -10,6 +10,7 @@ process TELOMEREHUNTER {
     input:
     tuple val(meta) , path(tumour_bam), path(tumour_bai)
     tuple val(meta2), path(normal_bam), path(normal_bai)
+    path(banding)
 
     output:
     tuple val(meta), path("*.bam"), emit: bam
@@ -21,19 +22,21 @@ process TELOMEREHUNTER {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def outputDir = "${prefix}_telomerehunter"
     """
-    telomerehunter \\
-        -ibt ${tumour_bam} \\
-        -ibc ${normal_bam} \\
-        -o . \\
-        -p ${prefix} \\
-        -rt 4 \\
-        -pl \\
-        -r \"TTAGGG TGAGGG TCAGGG TTCGGG TTGGGG TTTGGG ATAGGG CATGGG CTAGGG GTAGGG TAAGGG\" \\
-        -rc \"TTAGGG TGAGGG TCAGGG TTCGGG TTGGGG TTTGGG ATAGGG CATGGG CTAGGG GTAGGG TAAGGG\" \\
-        -bp 6 \\
-        -mqt 6 \\
-        ${args}
+    mkdir -p ${outputDir}
+
+    telomerehunter -o ${outputDir}/ \\
+    -p ${prefix} \\
+    -ibt ${tumour_bam} \\
+    -ibc ${normal_bam} \\
+    -rt 4 \\
+    -pl \\
+    -r TTAGGG TGAGGG TCAGGG TTCGGG TTGGGG TTTGGG ATAGGG CATGGG CTAGGG GTAGGG TAAGGG \\
+    -b ${banding} \\
+    -mqt 6
+
+    cp -r ${outputDir}/${prefix}/* .
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
