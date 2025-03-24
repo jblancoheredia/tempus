@@ -4,16 +4,19 @@ process TELOMEREHUNTER_FULL {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE':
+        'docker://blancojmskcc/telomerehunter:1.1.0' :
         'blancojmskcc/telomerehunter:1.1.0' }"
 
     input:
-    tuple val(meta) , path(tumour_bam), path(tumour_bai)
-    tuple val(meta2), path(normal_bam), path(normal_bai)
+    tuple val(meta) , path(tumour_bam)
+    tuple val(meta1), path(tumour_bai)
+    path(normal_bam)
+    path(normal_bai)
     path(banding)
 
     output:
-    tuple val(meta), path("*.bam"), emit: bam
+    tuple val(meta), path("*.pdf"), emit: pdf
+    tuple val(meta), path("*.tsv"), emit: tsv
     path "versions.yml"           , emit: versions
 
     when:
@@ -26,15 +29,17 @@ process TELOMEREHUNTER_FULL {
     """
     mkdir -p ${outputDir}
 
-    telomerehunter -o ${outputDir}/ \\
-    -p ${prefix} \\
-    -ibt ${tumour_bam} \\
-    -ibc ${normal_bam} \\
-    -rt 4 \\
-    -pl \\
-    -r TTAGGG TGAGGG TCAGGG TTCGGG TTGGGG TTTGGG ATAGGG CATGGG CTAGGG GTAGGG TAAGGG \\
-    -b ${banding} \\
-    -mqt 6
+    telomerehunter --outPath ${outputDir}/ \\
+    --pid ${prefix} \\
+    --inputBamTumor ${tumour_bam} \\
+    --inputBamControl ${normal_bam} \\
+    --bandingFile ${banding} \\
+    --repeatThreshold 4 \\
+    --mappingQualityThreshold 4 \\
+    --repeats TTAGGG TGAGGG TCAGGG TTCGGG TTGGGG TTTGGG ATAGGG CATGGG CTAGGG GTAGGG TAAGGG \\
+    --repeatsContext TTAGGG TGAGGG TCAGGG TTCGGG TTGGGG TTTGGG ATAGGG CATGGG CTAGGG GTAGGG TAAGGG \\
+    --parallel \\
+    -p1 -p2 -p3 -p4 -p5 -p6 -p7
 
     cp -r ${outputDir}/${prefix}/* .
 
@@ -46,7 +51,8 @@ process TELOMEREHUNTER_FULL {
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}.bam
+    touch ${prefix}.tsv
+    touch ${prefix}.pdf
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
