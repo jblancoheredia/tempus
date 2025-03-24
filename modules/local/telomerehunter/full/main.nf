@@ -4,7 +4,7 @@ process TELOMEREHUNTER_FULL {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE':
+        'docker://blancojmskcc/telomerehunter:1.1.0' :
         'blancojmskcc/telomerehunter:1.1.0' }"
 
     input:
@@ -13,7 +13,8 @@ process TELOMEREHUNTER_FULL {
     path(banding)
 
     output:
-    tuple val(meta), path("*.bam"), emit: bam
+    tuple val(meta), path("*.pdf"), emit: pdf
+    tuple val(meta), path("*.tsv"), emit: tsv
     path "versions.yml"           , emit: versions
 
     when:
@@ -46,7 +47,8 @@ process TELOMEREHUNTER_FULL {
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}.bam
+    touch ${prefix}.tsv
+    touch ${prefix}.pdf
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
